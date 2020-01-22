@@ -21,9 +21,9 @@ def draw_benchmarks_plots(out_path, rows):
 	plot.set_xlabel('number of queens')
 	plot.set_ylabel('time [s]')
 	fig.tight_layout()
-	
+
 	out_path.parent.mkdir(parents=True, exist_ok=True)
-	
+
 	# Save plot
 	for ext in FORMATS:
 		fig.savefig(out_path.with_suffix(ext))
@@ -32,7 +32,7 @@ def draw_benchmarks_plots(out_path, rows):
 	plot.set_yscale('log')
 
 	out_path_log = out_path.parent / f'{out_path.stem}_log'
-	
+
 	for ext in FORMATS:
 		fig.savefig(out_path_log.with_suffix(ext))
 
@@ -60,6 +60,9 @@ def draw_benchmarks_plots(out_path, rows):
 
 draw_benchmarks_plots('../data/plots/sequential_with_julia', [
 	Row('Python', '../data/python_pure.csv', 'r'),
+	Row('Python Lists', '../data/python_lists.csv', 'g'),
+	Row('Python Deque', '../data/python_deque.csv', 'y'),
+	Row('Python Bitarray', '../data/python_bitarray.csv', 'b'),
 	Row('Numba', '../data/python_numba_seq.csv', '#820002'),
 	Row('C++ stack', '../data/cplus_seq_stack_lambda.csv', 'k'),
 	Row('C++ heap', '../data/cplus_at_new.csv', '#828282'),

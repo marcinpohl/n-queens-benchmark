@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import numpy as np
+import bitarray
+from collections import deque
 
 from pathlib import Path
 from timeit import timeit
@@ -14,35 +16,61 @@ from numba import njit, prange
 
 def allQueensAux_python(n, i, col, dg1, dg2):
     # All rows are filled. Increment the counter and stop the recursion
-    if n == i : 
+    if n == i :
         return 1
-    # Try putting a queen in each cell of row i    
+    # Try putting a queen in each cell of row i
 
     nsol = 0
     for j in range(n):
-        if (col[j] and dg1[i+j] and dg2[i-j+n]): 
-            
+        if (col[j] and dg1[i+j] and dg2[i-j+n]):
+
             col[j]     = False  # Mark column j as occupied
             dg1[i+j]   = False  # Mark diagonal i+j as occupied
             dg2[i-j+n] = False  # Mark diagonal i-j as occupied
 
             nsol += allQueensAux_python(n, i+1, col, dg1, dg2)
-            
+
             col[j]     = True   # Unmark column j
             dg1[i+j]   = True   # Unmark diagonal i+j
             dg2[i-j+n] = True   # Unmark diagonal i-j
-            
+
     return nsol
 
 
-def allQueens_python(n):   
-    # Arrays used to flag available columns and diagonals
+def allQueens_python(n):
+    # Numpy arrays used to flag available columns and diagonals
     col = np.ones(n, dtype=bool)
     dg1 = np.ones(2*n, dtype=bool)
     dg2 = np.ones(2*n, dtype=bool)
-    
+
     return allQueensAux_python(n,0,col,dg1,dg2)
 
+def allQueensLists(n):
+    # Lists used to flag available columns and diagonals
+    n = int(n)
+    col = [True]*n
+    dg1 = [True]*2*n
+    dg2 = [True]*2*n
+
+    return allQueensAux_python(n,0,col,dg1,dg2)
+
+def allQueensDeque(n):
+    # Deque of fixed size used to flag available columns and diagonals
+    n = int(n)
+    col = deque([True]*n, n)
+    dg1 = deque([True]*2*n, 2*n)
+    dg2 = deque([True]*2*n, 2*n)
+
+    return allQueensAux_python(n,0,col,dg1,dg2)
+
+def allQueensBitarray(n):
+    # BitArrays (external module) used to flag available columns and diagonals
+    n = int(n)
+    col = bitarray.bitarray([True]*n)
+    dg1 = bitarray.bitarray([True]*2*n)
+    dg2 = bitarray.bitarray([True]*2*n)
+
+    return allQueensAux_python(n,0,col,dg1,dg2)
 
 @njit(nogil=True) #Numba decorator
 def allQueensAux_numba(n, i, col, dg1, dg2):
@@ -54,18 +82,18 @@ def allQueensAux_numba(n, i, col, dg1, dg2):
     nsol = 0
 
     for j in range(n):
-        if (col[j] and dg1[i+j] and dg2[i-j+n]): 
+        if (col[j] and dg1[i+j] and dg2[i-j+n]):
 
             col[j]     = False  # Mark column j as occupied
             dg1[i+j]   = False  # Mark diagonal i+j as occupied
             dg2[i-j+n] = False  # Mark diagonal i-j as occupied
 
             nsol += allQueensAux_numba(n,i+1,col,dg1,dg2)
-            
+
             col[j]     = True   # Unmark column j
             dg1[i+j]   = True   # Unmark diagonal i+j
             dg2[i-j+n] = True   # Unmark diagonal i-j
-            
+
     return nsol
 
 
@@ -75,11 +103,11 @@ def allQueens_numba(n, i=0, col=None, dg1=None, dg2=None):
     col = np.ones(n,dtype=numba.boolean)
     dg1 = np.ones(2*n,dtype=numba.boolean)
     dg2 = np.ones(2*n,dtype=numba.boolean)
-    
+
     return allQueensAux_numba(n,0,col,dg1,dg2)
 
 
-@njit(nogil=True)   
+@njit(nogil=True)
 def allQueensCol(n,j):
     col = np.ones(n,dtype=numba.boolean)
     dg1 = np.ones(2*n,dtype=numba.boolean)
@@ -106,14 +134,14 @@ def poolWorker(n,j):
 def allQueensPool(n, pool):
     nsols = pool.map(partial(poolWorker,n), range(n))
     return (sum(nsols))
-    
+
 
 
 def timeit_and_print(statement, number=10, name=''):
     time_elapsed = timeit(statement,number=number)
-    
+
     time_per_iter = time_elapsed/number
-    
+
     print('{ti:04f} s/iter | {tt:04f} s total | {name}'.format(
         ti = time_per_iter,
         tt = time_elapsed,
@@ -123,24 +151,24 @@ def timeit_and_print(statement, number=10, name=''):
 
 
 def timeit_and_var(statement, number=10, name=''):
-    
+
     if(number<1):
         return 0.0,0.0
-    
+
     mean = 0.0
     var  = 0.0
-    
+
     for i in range(number):
         dt = timeit(statement, number=1)
         mean += dt
         var  += dt*dt
-        
+
     numb = float(number)
     mean = mean / numb
     var  = var  / numb  - mean*mean
     var *= (numb / (numb - 1.0))
     var  = np.sqrt(var)
-    
+
     print('{ti:04f} s/iter | {tt:04f} variance | {name}'.format(
         ti = mean,
         tt = var,
@@ -154,6 +182,9 @@ VARIANTS = {
     'numba_seq': allQueens_numba,
     'numba_para': allQueensPara,
     'pool': allQueensPool,
+    'lists': allQueensLists,
+    'deque': allQueensDeque,
+    'bitarray': allQueensBitarray,
 }
 
 
@@ -189,8 +220,8 @@ def main(num_from, num_to, variant, output):
                     num_iter = 5
 
                 mean, var = timeit_and_var(
-                    partial(func, num_queens), 
-                    number=num_iter, 
+                    partial(func, num_queens),
+                    number=num_iter,
                     name=f'{variant} {num_queens} queens (nt {num_iter})',
                 )
 

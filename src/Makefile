@@ -1,4 +1,4 @@
-
+PIN := taskset -c 1
 
 ../bin/queens_cpp_stack: queens.cpp
 	clang++ -Ofast -std=c++17 -pthread queens.cpp -o ../bin/queens_cpp_stack
@@ -44,15 +44,20 @@ c++: ../bin/queens_cpp_stack ../bin/queens_cpp_heap ../bin/queens_cpp_stack_lamb
 c++_array_types: ../data/cplus_at_stack.csv ../data/cplus_at_new.csv ../data/cplus_at_vbool.csv ../data/cplus_at_vbyte.csv
 
 
+python_simple:
+	$(PIN) python queens.py --num_from 8 --num_to 12 --variant lists --output ../data/python_lists.csv
+	$(PIN) python queens.py --num_from 8 --num_to 12 --variant deque --output ../data/python_deque.csv
+	$(PIN) python queens.py --num_from 8 --num_to 12 --variant bitarray --output ../data/python_bitarray.csv
+
 python_seq:
-	python queens.py --num_from 8 --num_to 12 --variant python --output ../data/python_pure.csv
-	python queens.py --num_from 8 --num_to 16 --variant numba_seq --output ../data/python_numba_seq.csv
+	$(PIN) python queens.py --num_from 8 --num_to 12 --variant python --output ../data/python_pure.csv
+	$(PIN) python queens.py --num_from 8 --num_to 12 --variant numba_seq --output ../data/python_numba_seq.csv
 
 python_para:
-	python queens.py --num_from 8 --num_to 18 --variant pool --output ../data/python_numba_pool.csv
-	python queens.py --num_from 8 --num_to 18 --variant numba_para --output ../data/python_numba_para.csv
+	python queens.py --num_from 8 --num_to 12 --variant pool --output ../data/python_numba_pool.csv
+	python queens.py --num_from 8 --num_to 12 --variant numba_para --output ../data/python_numba_para.csv
 
-python: python_seq python_para
+python: python_seq python_para python_simple
 
 
 julia_seq:
@@ -74,7 +79,7 @@ scala: ../bin/queens.scala-assembly-1.0.jar
 
 java: Queens.java
 	javac Queens.java -d ../bin/ && cd ../bin && java Queens > ../data/java_seq_class.csv
-	
+
 
 
 plots:
